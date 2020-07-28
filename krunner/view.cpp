@@ -432,3 +432,8 @@ void View::setVisible(bool visible)
         PlasmaQuick::Dialog::setVisible(visible);
     }
 }
+
+void View::toggleDisplay()
+{
+    setVisible(!m_requestedVisible);
+}

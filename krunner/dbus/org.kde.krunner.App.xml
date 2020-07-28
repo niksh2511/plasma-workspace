@@ -1,10 +1,16 @@
 <!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN" "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
 <node>
   <interface name="org.kde.krunner.App">
+    <!--Show krunner if it's currently hidden, do nothing if it's already visible-->
     <method name="display">
     </method>
+    <!--Show krunner if it's currently hidden, and launch in single runner mode-->
     <method name="displaySingleRunner">
+      <!--The ID of the runner to use-->
       <arg name="runnerName" type="s" direction="in"/>
+    </method>
+    <!--Show krunner if it's currently hidden, hide otherwise-->
+    <method name="toggleDisplay">
     </method>
     <method name="displayWithClipboardContents">
     </method>

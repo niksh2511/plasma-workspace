@@ -74,6 +74,7 @@ protected:
     void showEvent(QShowEvent *event) override;
 
 public Q_SLOTS:
+    void toggleDisplay();
     void setVisible(bool visible);
     void display();
     void displaySingleRunner(const QString &runnerName);
