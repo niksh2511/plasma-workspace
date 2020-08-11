@@ -28,6 +28,9 @@
 #include <QStandardPaths>
 
 #include <KIO/CommandLauncherJob>
+#include <QProcess>
+#include <QFileInfo>
+#include <QDebug>
 
 K_EXPORT_PLASMA_RUNNER_WITH_JSON(ShellRunner, "plasma-runner-shell.json")
 
@@ -45,6 +48,10 @@ ShellRunner::ShellRunner(QObject *parent, const QVariantList &args)
                             QIcon::fromTheme(QStringLiteral("utilities-terminal")),
                             i18n("Run in Terminal Window"))};
     m_matchIcon = QIcon::fromTheme(QStringLiteral("system-run"));
+    // We only want to read the bash aliases/functions if the configured shell is bash
+    if (QFileInfo(qEnvironmentVariable("SHELL")).fileName() == QLatin1String("bash")) {
+        parseBashAliasesAndFunctions();
+    }
 }
 
 ShellRunner::~ShellRunner()
@@ -55,12 +62,20 @@ void ShellRunner::match(Plasma::RunnerContext &context)
 {
     bool isShellCommand = context.type() == Plasma::RunnerContext::ShellCommand;
     QStringList envs;
-    QString command;
+    QString command = context.query();
     // If it is not a shell command we check if we use ENV variables, FEATURE: 409107
     // This is not recognized when setting the context type and we can't change it, because
     // other runners depend on the current pattern
     if (!isShellCommand) {
         isShellCommand = parseENVVariables(context.query(), envs, command);
+    }
+    // If it does not contain ENV variables it might be intended as a bash alias/function
+    if (!isShellCommand) {
+        if (m_bashCompatibleStrings.contains(KShell::splitArgs(context.query()).first())) {
+            isShellCommand = true;
+            // We want to launch bash in interactive mode and execute the command in it
+            command = QStringLiteral("bash -i -c %1").arg(KShell::quoteArg(command));
+        }
     }
     if (isShellCommand) {
         const QString term = context.query();
@@ -77,13 +92,13 @@ void ShellRunner::match(Plasma::RunnerContext &context)
 
 void ShellRunner::run(const Plasma::RunnerContext &context, const Plasma::QueryMatch &match)
 {
+    const QVariantList data = match.data().toList();
     if (match.selectedAction()) {
-        const QVariantList data = match.data().toList();
         KToolInvocation::invokeTerminal(data.at(0).toString(), data.at(1).toStringList());
         return;
     }
 
-    auto *job = new KIO::CommandLauncherJob(context.query());
+    auto *job = new KIO::CommandLauncherJob(data.at(0).toString());
     job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
     job->start();
 }
@@ -110,6 +125,28 @@ bool ShellRunner::parseENVVariables(const QString &query, QStringList &envs, QSt
         }
     }
     return false;
+}
+
+void ShellRunner::parseBashAliasesAndFunctions()
+{
+    // Bash aliases
+    QProcess aliasesProcess;
+    aliasesProcess.start(QStringLiteral("bash"), {"-c", "-i", "alias"});
+    aliasesProcess.waitForFinished(250);
+    const QStringList aliasOutputLines = QString(aliasesProcess.readAll()).split('\n');
+    for (const auto &alias : aliasOutputLines) {
+        QString prefixRemoved = QString(alias).remove(0, strlen("alias "));
+        m_bashCompatibleStrings << prefixRemoved.left(prefixRemoved.indexOf('='));
+    }
+
+    // Bash functions
+    QProcess functionProcess;
+    functionProcess.start(QStringLiteral("bash"), {"-c", "-i", "declare -F"});
+    functionProcess.waitForFinished(250);
+    const QStringList functionOutputLines = QString(functionProcess.readAll()).split('\n');
+    for (const auto &function : functionOutputLines) {
+        m_bashCompatibleStrings << QString(function).remove(0, strlen("declare -f "));
+    }
 }
 
 #include "shellrunner.moc"

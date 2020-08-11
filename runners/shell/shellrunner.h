@@ -20,6 +20,7 @@
 #define SHELLRUNNER_H
 
 #include <KRunner/AbstractRunner>
+#include <QSet>
 
 /**
  * This class runs programs using the literal name of the binary, much as one
@@ -39,6 +40,9 @@ class ShellRunner : public Plasma::AbstractRunner
 
     private:
         bool parseENVVariables(const QString &query, QStringList &envs, QString &command);
+
+        void parseBashAliasesAndFunctions();
+        QSet<QString> m_bashCompatibleStrings;
         QList<QAction *> m_actionList;
         QIcon m_matchIcon;
 };
