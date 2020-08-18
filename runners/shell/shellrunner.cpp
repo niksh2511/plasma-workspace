@@ -30,7 +30,6 @@
 #include <KIO/CommandLauncherJob>
 #include <QProcess>
 #include <QFileInfo>
-#include <QDebug>
 
 K_EXPORT_PLASMA_RUNNER_WITH_JSON(ShellRunner, "plasma-runner-shell.json")
 
@@ -92,6 +91,7 @@ void ShellRunner::match(Plasma::RunnerContext &context)
 
 void ShellRunner::run(const Plasma::RunnerContext &context, const Plasma::QueryMatch &match)
 {
+    Q_UNUSED(context)
     const QVariantList data = match.data().toList();
     if (match.selectedAction()) {
         KToolInvocation::invokeTerminal(data.at(0).toString(), data.at(1).toStringList());
