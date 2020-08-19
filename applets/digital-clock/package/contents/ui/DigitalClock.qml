@@ -24,6 +24,7 @@ import QtQuick.Layouts 1.1
 import org.kde.plasma.core 2.0 as PlasmaCore
 import org.kde.plasma.components 2.0 as Components // Date label height breaks on vertical panel with PC3 version
 import org.kde.plasma.private.digitalclock 1.0
+import org.kde.plasma.plasmoid 2.0
 
 Item {
     id: main
@@ -34,12 +35,14 @@ Item {
     property var item: switch (main.state) {
         case "horizontal": return horizontal
         case "vertical": return vertical
+        case "verticalSmall": return verticalSmall
         case "desktop": return desktop
         default: console.log("unreachable!")
     }
 
     Component { id: horizontal; HorizontalClock {} }
     Component { id: vertical; VerticalClock {} }
+    Component { id: verticalSmall; VerticalClockSmall {} }
     Component { id: desktop; DesktopClock {} }
 
     property bool showSeconds: plasmoid.configuration.showSeconds
@@ -99,6 +102,10 @@ Item {
         State {
             name: "horizontal"
             when: plasmoid.formFactor === PlasmaCore.Types.Horizontal
+        },
+        State {
+            name: "verticalSmall"
+            when: plasmoid.formFactor === PlasmaCore.Types.Vertical && plasmoid.width < PlasmaCore.Units.gridUnit * 3
         },
         State {
             name: "vertical"
