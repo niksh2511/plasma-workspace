@@ -49,15 +49,18 @@ ColumnLayout {
         Layout.maximumWidth: PlasmaCore.Units.gridUnit * 4
     }
 
-    NestedLabel {
-        visible: digitalClock.showDate
-        text: digitalClock.dateText
-        exportImplicit: true
-        horizontalAlignment: Text.AlignHCenter
-        fontSizeMode: Text.HorizontalFit
-        wrapMode: Text.Wrap
-        Layout.fillWidth: true
-        Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
-        Layout.maximumWidth: PlasmaCore.Units.gridUnit * 4
+    Repeater {
+        model: digitalClock.dateText.includes(",") ? digitalClock.dateText.split(",").map(i => i.trim()) : digitalClock.dateText.split(" ")
+        NestedLabel {
+            visible: digitalClock.showDate
+            text: modelData
+            exportImplicit: true
+            horizontalAlignment: Text.AlignHCenter
+            fontSizeMode: Text.HorizontalFit
+            wrapMode: Text.Wrap
+            Layout.fillWidth: true
+            Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
+            Layout.maximumWidth: PlasmaCore.Units.gridUnit * 4
+        }
     }
 }
