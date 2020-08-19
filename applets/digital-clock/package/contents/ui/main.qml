@@ -79,8 +79,10 @@ Item {
         return timezoneString;
     }
 
+    DigitalClock { id: digitalClock }
+
     Plasmoid.preferredRepresentation: Plasmoid.compactRepresentation
-    Plasmoid.compactRepresentation: DigitalClock { }
+    Plasmoid.compactRepresentation: digitalClock.item
     Plasmoid.fullRepresentation: CalendarView { }
 
     Plasmoid.toolTipItem: Loader {
