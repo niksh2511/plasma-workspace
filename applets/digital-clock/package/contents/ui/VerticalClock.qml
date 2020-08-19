@@ -25,7 +25,7 @@ ColumnLayout {
     width: digitalClock.width
 
     Repeater {
-        model: digitalClock.timeText.split(":")
+        model: digitalClock.timeText.split(/[\s:]+/)
         NestedLabel {
             text: modelData
             exportImplicit: true
