@@ -47,10 +47,8 @@ ShellRunner::ShellRunner(QObject *parent, const QVariantList &args)
                             QIcon::fromTheme(QStringLiteral("utilities-terminal")),
                             i18n("Run in Terminal Window"))};
     m_matchIcon = QIcon::fromTheme(QStringLiteral("system-run"));
-    // We only want to read the bash aliases/functions if the configured shell is bash
-    if (QFileInfo(qEnvironmentVariable("SHELL")).fileName() == QLatin1String("bash")) {
-        parseBashAliasesAndFunctions();
-    }
+    // If the shell is not bash we assume the aliases/functions have been initailzed
+    m_initialized = QFileInfo(qEnvironmentVariable("SHELL")).fileName() != QLatin1String("bash");
 }
 
 ShellRunner::~ShellRunner()
@@ -59,6 +57,10 @@ ShellRunner::~ShellRunner()
 
 void ShellRunner::match(Plasma::RunnerContext &context)
 {
+    if (!m_initialized) {
+        parseBashAliasesAndFunctions();
+        QMutexLocker locker(&m_mutex);
+    }
     bool isShellCommand = context.type() == Plasma::RunnerContext::ShellCommand;
     QStringList envs;
     QString command = context.query();
@@ -129,6 +131,10 @@ bool ShellRunner::parseENVVariables(const QString &query, QStringList &envs, QSt
 
 void ShellRunner::parseBashAliasesAndFunctions()
 {
+    // If another tread is calls the the method we return
+    if (!m_mutex.tryLock()) {
+        return;
+    }
     // Bash aliases
     QProcess aliasesProcess;
     aliasesProcess.start(QStringLiteral("bash"), {"-c", "-i", "alias"});
@@ -147,6 +153,8 @@ void ShellRunner::parseBashAliasesAndFunctions()
     for (const auto &function : functionOutputLines) {
         m_bashCompatibleStrings << QString(function).remove(0, strlen("declare -f "));
     }
+    m_mutex.unlock();
+    m_initialized = true;
 }
 
 #include "shellrunner.moc"
